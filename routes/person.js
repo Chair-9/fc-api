@@ -4,6 +4,7 @@ const async = require('async');
 var express = require('express');
 var router = express.Router();
 var cacheCheck = require('../lib/cacheCheck');
+var personSearch = require('../lib/personSearch');
 
 
 router.post('/', function(req, res, next) {
@@ -27,9 +28,16 @@ router.post('/', function(req, res, next) {
             });
         },
         function(fcCallback) {
-
-            fcCallback()
-
+            personSearch(personObj, function(err, data){
+                if(err){
+                    winston.error(err);
+                    fcCallback();
+                } else {
+                    winston.info('[API STATUS] Search workflow complete');
+                    personObj = data;
+                    fcCallback();
+                }
+            });
         },
         function(mongoCallback) {
 
