@@ -56,7 +56,7 @@ router.post('/', function(req, res, next) {
             res.status(500).send(err)
         } else {
             winston.info('[API STATUS] /person workflow complete.  Sending response');
-            res.status(500).send(returnObj)
+            res.status(200).send(returnObj)
         }
 
 

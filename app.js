@@ -45,7 +45,10 @@ app.use(function(err, req, res, next) {
 });
 
 var mongoose = require('mongoose');
+mongoose.Promise = require('bluebird');
 var assert = require('assert');
+
+
 var fs = require('fs');
 
 var ca = [ fs.readFileSync(__dirname + "/servercert.crt") ];
