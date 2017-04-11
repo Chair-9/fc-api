@@ -23,6 +23,7 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
+//routes
 app.use('/', index);
 app.use('/person', person);
 
@@ -47,10 +48,7 @@ app.use(function(err, req, res, next) {
 var mongoose = require('mongoose');
 mongoose.Promise = require('bluebird');
 var assert = require('assert');
-
-
 var fs = require('fs');
-
 var ca = [ fs.readFileSync(__dirname + "/servercert.crt") ];
 
 var options = {

@@ -5,6 +5,7 @@ var express = require('express');
 var router = express.Router();
 var cacheCheck = require('../lib/cacheCheck');
 var personSearch = require('../lib/personSearch');
+var saveToMongo = require('../lib/saveToMongo');
 
 
 router.post('/', function(req, res, next) {
@@ -16,6 +17,7 @@ router.post('/', function(req, res, next) {
 
     async.series([
         function(cacheCallback) {
+
             cacheCheck(email, function(err, data){
                 if(err){
                     winston.error(err);
@@ -28,21 +30,40 @@ router.post('/', function(req, res, next) {
             });
         },
         function(fcCallback) {
-            personSearch(personObj, function(err, data){
-                if(err){
-                    winston.error(err);
-                    fcCallback();
-                } else {
-                    winston.info('[API STATUS] Search workflow complete');
-                    personObj = data;
-                    fcCallback();
-                }
-            });
+
+            if(personObj && personObj.cacheHit && personObj.cacheHit == true){
+                winston.info('[API STATUS] Cache hit detected, skipping FC Call');
+                fcCallback();
+            } else {
+                personSearch(personObj, function(err, data){
+                    if(err){
+                        winston.error(err);
+                        fcCallback();
+                    } else {
+                        winston.info('[API STATUS] Search workflow complete');
+                        personObj = data;
+                        personObj.email = email;
+                        fcCallback();
+                    }
+                });
+            }
         },
         function(mongoCallback) {
 
-            mongoCallback()
-
+            if(personObj && personObj.cacheHit && personObj.cacheHit == true){
+                winston.info('[API STATUS] Cache hit detected, skipping Mongo write Call');
+                mongoCallback();
+            } else {
+                saveToMongo(personObj, function(err, data){
+                    if(err){
+                        winston.error(err);
+                        mongoCallback();
+                    } else {
+                        winston.info('[API STATUS] Mongo write workflow complete');
+                        mongoCallback();
+                    }
+                });
+            }
         },
         function(returnFormatCallback) {
 
@@ -50,7 +71,6 @@ router.post('/', function(req, res, next) {
 
         }
     ], function (err) {
-
         if(err) {
             winston.error(err);
             res.status(500).send(err)
@@ -58,14 +78,7 @@ router.post('/', function(req, res, next) {
             winston.info('[API STATUS] /person workflow complete.  Sending response');
             res.status(200).send(returnObj)
         }
-
-
     });
-
-
-
-
-
 });
 
 module.exports = router;
